@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Smart Campus — Admin Panel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+    <style>
+        :root {
+            --neon-pink:   #ff2d78; --neon-pink-2: #ff6bb5; --neon-white: #ffffff;
+            --bg-dark:     #050508; --bg-card: rgba(255,255,255,0.03);
+            --border-dim:  rgba(255,255,255,0.07); --border-pink: rgba(255,45,120,0.4);
+            --glow-pink:   0 0 20px rgba(255,45,120,0.5); --text-muted: rgba(255,255,255,0.4);
+            --danger: #ff4444; --success: #00ff88;
+        }
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        html { scroll-behavior: smooth; }
+        body { background: var(--bg-dark); font-family: 'Rajdhani',sans-serif; color: var(--neon-white); min-height: 100vh; }
+        body::before { content:''; position:fixed; inset:0; background-image:linear-gradient(rgba(255,45,120,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,45,120,0.025) 1px,transparent 1px); background-size:50px 50px; pointer-events:none; z-index:0; }
+
+        .navbar { position:sticky; top:0; z-index:100; background:rgba(5,5,8,0.97); backdrop-filter:blur(20px); border-bottom:1px solid var(--border-pink); padding:0 40px; display:flex; align-items:center; height:64px; gap:24px; }
+        .nav-brand { font-family:'Orbitron',sans-serif; font-size:0.9rem; font-weight:700; background:linear-gradient(135deg,#fff,var(--neon-pink-2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; letter-spacing:2px; }
+        .admin-badge { font-family:'Share Tech Mono',monospace; font-size:0.6rem; letter-spacing:3px; padding:4px 10px; border:1px solid var(--neon-pink); color:var(--neon-pink); background:rgba(255,45,120,0.08); }
+        .nav-spacer { flex:1; }
+        .nav-link { font-family:'Share Tech Mono',monospace; font-size:0.65rem; letter-spacing:2px; color:var(--text-muted); text-decoration:none; padding:6px 12px; border:1px solid transparent; transition:all 0.3s; }
+        .nav-link:hover { color:var(--neon-pink); border-color:var(--border-pink); }
+
+        .main { position:relative; z-index:1; max-width:1400px; margin:0 auto; padding:36px 40px 80px; }
+
+        .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin-bottom:48px; }
+        .stat-card { background:var(--bg-card); border:1px solid var(--border-dim); padding:24px 20px; position:relative; overflow:hidden; transition:border-color 0.3s; }
+        .stat-card:hover { border-color:var(--border-pink); }
+        .stat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,var(--neon-pink),transparent); }
+        .stat-label { font-family:'Share Tech Mono',monospace; font-size:0.6rem; letter-spacing:3px; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:10px; }
+        .stat-value { font-family:'Orbitron',sans-serif; font-size:2.2rem; font-weight:700; color:var(--neon-pink); }
+
+        .section-header { display:flex; align-items:baseline; gap:16px; margin-bottom:24px; }
+        .section-title { font-family:'Orbitron',sans-serif; font-size:1rem; font-weight:700; letter-spacing:3px; }
+        .section-line { flex:1; height:1px; background:linear-gradient(90deg,var(--border-pink),transparent); }
+        .add-btn { font-family:'Share Tech Mono',monospace; font-size:0.65rem; letter-spacing:2px; padding:8px 20px; background:transparent; border:1px solid var(--neon-pink); color:var(--neon-pink); cursor:pointer; transition:all 0.3s; }
+        .add-btn:hover { background:var(--neon-pink); color:#fff; box-shadow:var(--glow-pink); }
+
+        .filter-bar { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:28px; padding:18px 20px; background:var(--bg-card); border:1px solid var(--border-dim); }
+        .filter-select, .filter-input, .filter-date { flex:1; min-width:140px; background:rgba(255,255,255,0.03); border:1px solid var(--border-dim); color:var(--neon-white); font-family:'Rajdhani',sans-serif; font-size:0.9rem; padding:9px 12px; outline:none; transition:border-color 0.3s; }
+        .filter-select option { background:#0d0d12; }
+        .filter-select:focus, .filter-input:focus, .filter-date:focus { border-color:var(--border-pink); }
+        .filter-date::-webkit-calendar-picker-indicator { filter:invert(0.4); }
+        .filter-btn { padding:9px 20px; font-family:'Share Tech Mono',monospace; font-size:0.65rem; letter-spacing:2px; background:transparent; border:1px solid var(--neon-pink); color:var(--neon-pink); cursor:pointer; transition:all 0.3s; }
+        .filter-btn:hover { background:var(--neon-pink); color:#fff; }
+
+        .events-table-wrapper { overflow-x:auto; border:1px solid var(--border-dim); margin-bottom:60px; }
+        .events-table { width:100%; border-collapse:collapse; min-width:900px; }
+        .events-table th { font-family:'Share Tech Mono',monospace; font-size:0.6rem; letter-spacing:3px; color:var(--text-muted); border-bottom:1px solid var(--border-dim); padding:14px 16px; text-align:left; background:rgba(255,45,120,0.03); white-space:nowrap; }
+        .events-table td { font-size:0.9rem; padding:14px 16px; border-bottom:1px solid rgba(255,255,255,0.04); vertical-align:middle; }
+        .events-table tr:hover td { background:rgba(255,45,120,0.04); }
+        .events-table tr:last-child td { border-bottom:none; }
+
+        .type-badge { font-family:'Share Tech Mono',monospace; font-size:0.58rem; letter-spacing:2px; padding:3px 8px; border:1px solid var(--border-pink); color:var(--neon-pink-2); white-space:nowrap; }
+        .status-badge { font-family:'Share Tech Mono',monospace; font-size:0.58rem; letter-spacing:2px; padding:3px 8px; }
+        .status-badge.UPCOMING  { border:1px solid rgba(0,255,136,0.3); color:#00ff88; background:rgba(0,255,136,0.06); }
+        .status-badge.COMPLETED { border:1px solid rgba(255,255,255,0.15); color:rgba(255,255,255,0.4); }
+        .status-badge.CANCELLED { border:1px solid rgba(255,68,68,0.3); color:#ff6b6b; }
+        .status-badge.ONGOING   { border:1px solid rgba(255,200,0,0.3); color:#ffd700; }
+
+        .action-btns { display:flex; gap:8px; }
+        .btn-edit { font-family:'Share Tech Mono',monospace; font-size:0.6rem; letter-spacing:1px; padding:6px 14px; background:transparent; border:1px solid rgba(255,200,0,0.4); color:#ffd700; cursor:pointer; transition:all 0.3s; white-space:nowrap; }
+        .btn-edit:hover { background:rgba(255,200,0,0.1); }
+        .btn-delete { font-family:'Share Tech Mono',monospace; font-size:0.6rem; letter-spacing:1px; padding:6px 14px; background:transparent; border:1px solid rgba(255,68,68,0.4); color:var(--danger); cursor:pointer; transition:all 0.3s; white-space:nowrap; }
+        .btn-delete:hover { background:rgba(255,68,68,0.1); }
+
+        .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.9); backdrop-filter:blur(10px); z-index:500; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.3s; }
+        .modal-overlay.active { opacity:1; pointer-events:all; }
+        .modal { background:#080810; border:1px solid var(--border-pink); padding:36px 40px; width:100%; max-width:580px; margin:20px; position:relative; transform:scale(0.96); transition:transform 0.3s; max-height:90vh; overflow-y:auto; }
+        .modal-overlay.active .modal { transform:scale(1); }
+        .modal::before { content:''; position:absolute; top:0; left:10%; right:10%; height:1px; background:linear-gradient(90deg,transparent,var(--neon-pink),transparent); }
+        .modal-title { font-family:'Orbitron',sans-serif; font-size:1rem; font-weight:700; letter-spacing:2px; margin-bottom:28px; }
+        .modal-close { position:absolute; top:16px; right:20px; background:none; border:none; color:var(--text-muted); font-size:1.2rem; cursor:pointer; transition:color 0.2s; }
+        .modal-close:hover { color:var(--neon-pink); }
+
+        .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+        .form-group { margin-bottom:16px; }
+        .form-label { font-family:'Share Tech Mono',monospace; font-size:0.62rem; letter-spacing:2px; color:var(--text-muted); display:block; margin-bottom:6px; }
+        .form-input, .form-select, .form-textarea { width:100%; background:rgba(255,255,255,0.03); border:1px solid var(--border-dim); color:var(--neon-white); font-family:'Rajdhani',sans-serif; font-size:0.95rem; padding:11px 14px; outline:none; transition:border-color 0.3s; }
+        .form-select option { background:#0d0d12; }
+        .form-input:focus, .form-select:focus, .form-textarea:focus { border-color:var(--border-pink); }
+        .form-textarea { resize:vertical; min-height:90px; }
+        .form-submit { width:100%; padding:14px; font-family:'Orbitron',sans-serif; font-size:0.8rem; font-weight:700; letter-spacing:3px; background:linear-gradient(135deg,var(--neon-pink),#c4155a); border:none; color:#fff; cursor:pointer; margin-top:8px; transition:box-shadow 0.3s,transform 0.2s; clip-path:polygon(10px 0%,100% 0%,calc(100% - 10px) 100%,0% 100%); }
+        .form-submit:hover { box-shadow:var(--glow-pink); transform:translateY(-2px); }
+
+        .confirm-modal { background:#0a0408; border:1px solid rgba(255,68,68,0.4); padding:36px 40px; max-width:400px; text-align:center; }
+        .confirm-title { font-family:'Orbitron',sans-serif; font-size:0.9rem; letter-spacing:2px; margin-bottom:12px; }
+        .confirm-text { color:var(--text-muted); font-size:0.9rem; line-height:1.6; margin-bottom:28px; }
+        .confirm-btns { display:flex; gap:12px; }
+        .btn-confirm-del { flex:1; padding:12px; font-family:'Share Tech Mono',monospace; font-size:0.7rem; letter-spacing:2px; background:var(--danger); border:none; color:#fff; cursor:pointer; transition:opacity 0.2s; }
+        .btn-confirm-del:hover { opacity:0.85; }
+        .btn-cancel-del { flex:1; padding:12px; font-family:'Share Tech Mono',monospace; font-size:0.7rem; letter-spacing:2px; background:transparent; border:1px solid var(--border-dim); color:var(--text-muted); cursor:pointer; transition:all 0.3s; }
+        .btn-cancel-del:hover { border-color:var(--border-pink); color:var(--neon-pink); }
+
+        .toast { position:fixed; bottom:40px; right:40px; padding:14px 22px; background:#0a0a10; border:1px solid var(--neon-pink); font-family:'Share Tech Mono',monospace; font-size:0.72rem; letter-spacing:1px; z-index:1000; transform:translateY(80px); opacity:0; transition:all 0.4s cubic-bezier(0.4,0,0.2,1); max-width:360px; }
+        .toast.success { border-color:var(--success); box-shadow:0 0 20px rgba(0,255,136,0.2); }
+        .toast.error { border-color:var(--danger); box-shadow:0 0 20px rgba(255,68,68,0.2); }
+        .toast.show { transform:translateY(0); opacity:1; }
+
+        @media (max-width:768px) { .navbar{padding:0 20px;} .main{padding:20px;} .form-row{grid-template-columns:1fr;} }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <span class="nav-brand">SMART CAMPUS</span>
+    <span class="admin-badge">⚙ ADMIN</span>
+    <div class="nav-spacer"></div>
+    <a th:href="@{/dashboard}" class="nav-link">← Student View</a>
+    <a th:href="@{/}" class="nav-link">Home</a>
+</nav>
+
+<main class="main">
+
+    <!-- STATS -->
+    <div class="section-header" style="margin-bottom:20px;">
+        <h2 class="section-title">Dashboard Overview</h2>
+        <div class="section-line"></div>
+    </div>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span class="stat-label">Total Events</span>
+            <span class="stat-value" th:text="${stats.totalEvents}">0</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Upcoming</span>
+            <span class="stat-value" th:text="${stats.upcomingEvents}">0</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Completed</span>
+            <span class="stat-value" th:text="${stats.completedEvents}">0</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Total Registrations</span>
+            <span class="stat-value" th:text="${stats.totalRegistrations}">0</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Departments</span>
+            <span class="stat-value" th:text="${#lists.size(stats.departments)}">0</span>
+        </div>
+    </div>
+
+    <!-- MANAGE EVENTS -->
+    <div class="section-header">
+        <h2 class="section-title">Manage Events</h2>
+        <div class="section-line"></div>
+        <button class="add-btn" id="addEventBtn">+ ADD EVENT</button>
+    </div>
+
+    <div class="filter-bar">
+        <select class="filter-select" id="filterDept">
+            <option value="">All Departments</option>
+            <option th:each="dept : ${departments}" th:value="${dept}" th:text="${dept}">Dept</option>
+        </select>
+        <select class="filter-select" id="filterType">
+            <option value="">All Types</option>
+            <option th:each="t : ${eventTypes}" th:value="${t}" th:text="${t}">Type</option>
+        </select>
+        <select class="filter-select" id="filterStatus">
+            <option value="">All Statuses</option>
+            <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}">Status</option>
+        </select>
+        <input type="date" class="filter-date" id="filterFrom" title="From Date"/>
+        <input type="date" class="filter-date" id="filterTo" title="To Date"/>
+        <button class="filter-btn" id="searchBtn">SEARCH</button>
+        <button class="filter-btn" style="border-color:var(--border-dim);color:var(--text-muted);" id="resetBtn">RESET</button>
+    </div>
+
+    <div class="events-table-wrapper">
+        <table class="events-table">
+            <thead>
+            <tr>
+                <th>#</th><th>TITLE</th><th>TYPE</th><th>DATE</th>
+                <th>VENUE</th><th>DEPARTMENT</th><th>REGISTERED</th>
+                <th>STATUS</th><th>ACTIONS</th>
+            </tr>
+            </thead>
+            <tbody id="eventsTableBody">
+            <tr th:each="event, iterStat : ${events}">
+                <td style="color:var(--text-muted);font-family:'Share Tech Mono',monospace;font-size:0.75rem;" th:text="${iterStat.count}">1</td>
+                <td style="font-weight:600;max-width:200px;" th:text="${event.title}">Title</td>
+                <td><span class="type-badge" th:text="${event.eventType}">TYPE</span></td>
+                <td style="font-family:'Share Tech Mono',monospace;font-size:0.8rem;white-space:nowrap;"
+                    th:text="${#temporals.format(event.eventDate, 'dd MMM yyyy')}">Date</td>
+                <td th:text="${event.venue}">Venue</td>
+                <td th:text="${event.department}">Dept</td>
+                <td style="text-align:center;" th:text="${event.registeredCount} + ' / ' + ${event.capacity}">0/0</td>
+                <td>
+                    <span class="status-badge" th:classappend="${event.status}" th:text="${event.status}">Status</span>
+                </td>
+                <td>
+                    <div class="action-btns">
+                        <button class="btn-edit" th:data-id="${event.id}">EDIT</button>
+                        <button class="btn-delete" th:data-id="${event.id}" th:data-title="${event.title}">DELETE</button>
+                    </div>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(events)}">
+                <td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted);font-family:'Share Tech Mono',monospace;font-size:0.75rem;letter-spacing:2px;">
+                    NO EVENTS FOUND
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+<!-- ADD/EDIT MODAL -->
+<div class="modal-overlay" id="eventModal">
+    <div class="modal">
+        <button class="modal-close" id="closeEventModal">✕</button>
+        <h3 class="modal-title" id="modalTitle">ADD NEW EVENT</h3>
+        <input type="hidden" id="editingEventId"/>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Event Title *</label>
+                <input type="text" class="form-input" id="evTitle" maxlength="100" placeholder="Enter event title"/>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Department *</label>
+                <input type="text" class="form-input" id="evDept" placeholder="e.g. Computer Science"/>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Description *</label>
+            <textarea class="form-textarea" id="evDesc" placeholder="Detailed event description..."></textarea>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Date *</label>
+                <input type="date" class="form-input" id="evDate"/>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Time *</label>
+                <input type="time" class="form-input" id="evTime"/>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Venue *</label>
+                <input type="text" class="form-input" id="evVenue" placeholder="e.g. Auditorium A"/>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Capacity *</label>
+                <input type="number" class="form-input" id="evCapacity" min="1" max="10000" placeholder="Max attendees"/>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Event Type *</label>
+                <select class="form-select" id="evType">
+                    <option value="">-- Select Type --</option>
+                    <option th:each="t : ${eventTypes}" th:value="${t}" th:text="${t}">Type</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                <select class="form-select" id="evStatus">
+                    <option value="">-- Select Status --</option>
+                    <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}">Status</option>
+                </select>
+            </div>
+        </div>
+        <button class="form-submit" id="saveEventBtn">SAVE EVENT</button>
+    </div>
+</div>
+
+<!-- DELETE CONFIRM MODAL -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal confirm-modal">
+        <button class="modal-close" id="closeDeleteModal">✕</button>
+        <h3 class="confirm-title">CONFIRM DELETE</h3>
+        <p class="confirm-text">
+            Are you sure you want to delete<br/>
+            <strong id="deleteEventName" style="color:var(--neon-pink);">Event Name</strong>?
+            <br/><br/>This action cannot be undone.
+        </p>
+        <div class="confirm-btns">
+            <button class="btn-confirm-del" id="confirmDeleteBtn">DELETE</button>
+            <button class="btn-cancel-del" id="cancelDeleteBtn">CANCEL</button>
+        </div>
+        <input type="hidden" id="deleteEventId"/>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    // ── Helpers ───────────────────────────────────────────────────────
+    function showToast(msg, type = 'success') {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = 'toast ' + type + ' show';
+        setTimeout(() => { t.className = 'toast'; }, 4000);
+    }
+
+    function openModal(id)  { document.getElementById(id).classList.add('active'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+    function clearForm() {
+        document.getElementById('editingEventId').value = '';
+        document.getElementById('evTitle').value    = '';
+        document.getElementById('evDept').value     = '';
+        document.getElementById('evDesc').value     = '';
+        document.getElementById('evDate').value     = '';
+        document.getElementById('evTime').value     = '';
+        document.getElementById('evVenue').value    = '';
+        document.getElementById('evCapacity').value = '';
+        document.getElementById('evType').value     = '';
+        document.getElementById('evStatus').value   = '';
+    }
+
+    function escHtml(str) {
+        const d = document.createElement('div');
+        d.appendChild(document.createTextNode(str || ''));
+        return d.innerHTML;
+    }
+
+    // ── Wire up static buttons with addEventListener (no inline onclick) ──
+
+    // Close modals on overlay click
+    document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
+        overlay.addEventListener('click', function(e) {
+            if (e.target === this) closeModal(this.id);
+        });
+    });
+
+    document.getElementById('closeEventModal').addEventListener('click',  function() { closeModal('eventModal'); });
+    document.getElementById('closeDeleteModal').addEventListener('click', function() { closeModal('deleteModal'); });
+    document.getElementById('cancelDeleteBtn').addEventListener('click',  function() { closeModal('deleteModal'); });
+
+    // ADD EVENT button
+    document.getElementById('addEventBtn').addEventListener('click', function() {
+        clearForm();
+        document.getElementById('modalTitle').textContent = 'ADD NEW EVENT';
+        openModal('eventModal');
+    });
+
+    // SAVE EVENT button
+    document.getElementById('saveEventBtn').addEventListener('click', saveEvent);
+
+    // SEARCH button
+    document.getElementById('searchBtn').addEventListener('click', searchEvents);
+
+    // RESET button
+    document.getElementById('resetBtn').addEventListener('click', function() {
+        document.getElementById('filterDept').value   = '';
+        document.getElementById('filterType').value   = '';
+        document.getElementById('filterStatus').value = '';
+        document.getElementById('filterFrom').value   = '';
+        document.getElementById('filterTo').value     = '';
+        loadAllEvents();
+    });
+
+    // EDIT / DELETE buttons — event delegation on tbody
+    document.getElementById('eventsTableBody').addEventListener('click', function(e) {
+        var editBtn   = e.target.closest('.btn-edit');
+        var deleteBtn = e.target.closest('.btn-delete');
+        if (editBtn)   openEditModal(editBtn.dataset.id);
+        if (deleteBtn) confirmDelete(deleteBtn.dataset.id, deleteBtn.dataset.title);
+    });
+
+    // CONFIRM DELETE button
+    document.getElementById('confirmDeleteBtn').addEventListener('click', executeDelete);
+
+    // ── Core functions ────────────────────────────────────────────────
+
+    async function openEditModal(eventId) {
+        document.getElementById('modalTitle').textContent = 'EDIT EVENT';
+        clearForm();
+        try {
+            const res = await fetch('/api/events/' + eventId, { credentials: 'include' });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const event = await res.json();
+            document.getElementById('editingEventId').value = event.id;
+            document.getElementById('evTitle').value    = event.title    || '';
+            document.getElementById('evDept').value     = event.department || '';
+            document.getElementById('evDesc').value     = event.description || '';
+            document.getElementById('evDate').value     = event.eventDate  || '';
+            document.getElementById('evTime').value     = event.eventTime ? event.eventTime.substring(0, 5) : '';
+            document.getElementById('evVenue').value    = event.venue     || '';
+            document.getElementById('evCapacity').value = event.capacity  || '';
+            document.getElementById('evType').value     = event.eventType || '';
+            document.getElementById('evStatus').value   = event.status    || '';
+            openModal('eventModal');
+        } catch (err) {
+            showToast('Failed to load event: ' + err.message, 'error');
+        }
+    }
+
+    async function saveEvent() {
+        var id       = document.getElementById('editingEventId').value;
+        var title    = document.getElementById('evTitle').value.trim();
+        var dept     = document.getElementById('evDept').value.trim();
+        var desc     = document.getElementById('evDesc').value.trim();
+        var date     = document.getElementById('evDate').value;
+        var time     = document.getElementById('evTime').value;
+        var venue    = document.getElementById('evVenue').value.trim();
+        var capacity = document.getElementById('evCapacity').value;
+        var type     = document.getElementById('evType').value;
+        var status   = document.getElementById('evStatus').value;
+
+        if (!title || !dept || !desc || !date || !time || !venue || !capacity || !type) {
+            showToast('Please fill all required fields', 'error');
+            return;
+        }
+
+        var payload = {
+            title:       title,
+            description: desc,
+            department:  dept,
+            eventDate:   date,
+            eventTime:   time + ':00',
+            venue:       venue,
+            capacity:    parseInt(capacity),
+            eventType:   type,
+            status:      status || 'UPCOMING'
+        };
+
+        var url    = id ? '/api/admin/events/' + id : '/api/admin/events';
+        var method = id ? 'PUT' : 'POST';
+
+        try {
+            var res = await fetch(url, {
+                method:      method,
+                headers:     { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body:        JSON.stringify(payload)
+            });
+            if (res.ok) {
+                closeModal('eventModal');
+                showToast(id ? '✓ Event updated' : '✓ Event created', 'success');
+                setTimeout(function() { window.location.reload(); }, 1500);
+            } else {
+                var errBody = {};
+                try { errBody = await res.json(); } catch(e) {}
+                showToast('✗ ' + (errBody.message || 'Failed to save — status ' + res.status), 'error');
+            }
+        } catch (err) {
+            showToast('✗ Network error: ' + err.message, 'error');
+        }
+    }
+
+    function confirmDelete(id, title) {
+        document.getElementById('deleteEventId').value       = id;
+        document.getElementById('deleteEventName').textContent = title || 'this event';
+        openModal('deleteModal');
+    }
+
+    async function executeDelete() {
+        var id = document.getElementById('deleteEventId').value;
+        try {
+            var res = await fetch('/api/admin/events/' + id, {
+                method:      'DELETE',
+                credentials: 'include'
+            });
+            if (res.ok) {
+                closeModal('deleteModal');
+                showToast('✓ Event deleted', 'success');
+                setTimeout(function() { window.location.reload(); }, 1500);
+            } else {
+                showToast('✗ Failed to delete — status ' + res.status, 'error');
+            }
+        } catch (err) {
+            showToast('✗ Network error: ' + err.message, 'error');
+        }
+    }
+
+    async function searchEvents() {
+        var dept   = document.getElementById('filterDept').value;
+        var type   = document.getElementById('filterType').value;
+        var status = document.getElementById('filterStatus').value;
+        var from   = document.getElementById('filterFrom').value;
+        var to     = document.getElementById('filterTo').value;
+
+        var params = new URLSearchParams();
+        if (dept)   params.set('department', dept);
+        if (type)   params.set('eventType', type);
+        if (status) params.set('status', status);
+        if (from)   params.set('fromDate', from);
+        if (to)     params.set('toDate', to);
+
+        try {
+            var res = await fetch('/api/events/search?' + params.toString(), { credentials: 'include' });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            var events = await res.json();
+            renderTable(events);
+        } catch (err) {
+            showToast('✗ Search failed: ' + err.message, 'error');
+        }
+    }
+
+    async function loadAllEvents() {
+        try {
+            var res = await fetch('/api/admin/events', { credentials: 'include' });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            var events = await res.json();
+            renderTable(events);
+        } catch (err) {
+            showToast('✗ Failed to load events: ' + err.message, 'error');
+        }
+    }
+
+    function renderTable(events) {
+        var tbody = document.getElementById('eventsTableBody');
+        if (!events || events.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted);font-family:\'Share Tech Mono\',monospace;font-size:0.75rem;letter-spacing:2px;">NO EVENTS FOUND</td></tr>';
+            return;
+        }
+        tbody.innerHTML = events.map(function(e, i) {
+            return '<tr>' +
+                '<td style="color:var(--text-muted);font-family:\'Share Tech Mono\',monospace;font-size:0.75rem;">' + (i+1) + '</td>' +
+                '<td style="font-weight:600;">' + escHtml(e.title) + '</td>' +
+                '<td><span class="type-badge">' + escHtml(e.eventType) + '</span></td>' +
+                '<td style="font-family:\'Share Tech Mono\',monospace;font-size:0.8rem;">' + escHtml(e.eventDate) + '</td>' +
+                '<td>' + escHtml(e.venue) + '</td>' +
+                '<td>' + escHtml(e.department) + '</td>' +
+                '<td style="text-align:center;">' + (e.registeredCount || 0) + ' / ' + e.capacity + '</td>' +
+                '<td><span class="status-badge ' + escHtml(e.status) + '">' + escHtml(e.status) + '</span></td>' +
+                '<td><div class="action-btns">' +
+                '<button class="btn-edit"   data-id="' + e.id + '">EDIT</button>' +
+                '<button class="btn-delete" data-id="' + e.id + '" data-title="' + escHtml(e.title) + '">DELETE</button>' +
+                '</div></td>' +
+                '</tr>';
+        }).join('');
+    }
+</script>
+</body>
+</html>

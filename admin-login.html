@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Admin Login — Smart Campus</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;500&display=swap" rel="stylesheet"/>
+    <style>
+        :root { --neon-pink:#ff2d78; --bg-dark:#050508; --border-pink:rgba(255,45,120,0.4); --text-muted:rgba(255,255,255,0.4); }
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        body { background:var(--bg-dark); font-family:'Rajdhani',sans-serif; color:#fff;
+            min-height:100vh; display:flex; align-items:center; justify-content:center; }
+        body::before { content:''; position:fixed; inset:0;
+            background-image:linear-gradient(rgba(255,45,120,0.025) 1px,transparent 1px),
+            linear-gradient(90deg,rgba(255,45,120,0.025) 1px,transparent 1px);
+            background-size:50px 50px; pointer-events:none; }
+        .card { background:rgba(255,255,255,0.03); border:1px solid var(--border-pink);
+            padding:48px 40px; width:100%; max-width:400px; position:relative; }
+        .card::before { content:''; position:absolute; top:0; left:10%; right:10%; height:1px;
+            background:linear-gradient(90deg,transparent,var(--neon-pink),transparent); }
+        .brand { font-family:'Orbitron',sans-serif; font-size:0.85rem; font-weight:700;
+            letter-spacing:3px; text-align:center; margin-bottom:4px;
+            background:linear-gradient(135deg,#fff,#ff6bb5); -webkit-background-clip:text;
+            -webkit-text-fill-color:transparent; background-clip:text; }
+        .subtitle { font-family:'Share Tech Mono',monospace; font-size:0.6rem; letter-spacing:3px;
+            color:var(--neon-pink); text-align:center; margin-bottom:36px; }
+        .error-msg { background:rgba(255,68,68,0.1); border:1px solid rgba(255,68,68,0.4);
+            color:#ff6b6b; font-family:'Share Tech Mono',monospace; font-size:0.7rem;
+            letter-spacing:1px; padding:10px 14px; margin-bottom:20px; }
+        label { font-family:'Share Tech Mono',monospace; font-size:0.62rem; letter-spacing:2px;
+            color:var(--text-muted); display:block; margin-bottom:6px; }
+        input { width:100%; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);
+            color:#fff; font-family:'Rajdhani',sans-serif; font-size:1rem;
+            padding:12px 14px; outline:none; margin-bottom:16px; transition:border-color 0.3s; }
+        input:focus { border-color:var(--border-pink); }
+        button { width:100%; padding:14px; font-family:'Orbitron',sans-serif; font-size:0.75rem;
+            font-weight:700; letter-spacing:3px; background:linear-gradient(135deg,var(--neon-pink),#c4155a);
+            border:none; color:#fff; cursor:pointer; margin-top:8px;
+            clip-path:polygon(10px 0%,100% 0%,calc(100% - 10px) 100%,0% 100%);
+            transition:opacity 0.2s; }
+        button:hover { opacity:0.9; }
+        .back { display:block; text-align:center; margin-top:20px;
+            font-family:'Share Tech Mono',monospace; font-size:0.62rem;
+            letter-spacing:2px; color:var(--text-muted); text-decoration:none; }
+        .back:hover { color:var(--neon-pink); }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="brand">SMART CAMPUS</div>
+    <div class="subtitle">⚙ ADMIN ACCESS</div>
+
+    <div class="error-msg" th:if="${loginError}" th:text="${loginError}"></div>
+
+    <!-- Spring Security reads 'username' and 'password' field names by default -->
+    <form th:action="@{/admin/login}" method="post">
+        <label>USERNAME</label>
+        <input type="text" name="username" placeholder="admin" autocomplete="off"/>
+        <label>PASSWORD</label>
+        <input type="password" name="password" placeholder="••••••••"/>
+        <button type="submit">LOGIN</button>
+    </form>
+
+    <a th:href="@{/}" class="back">← Return Home</a>
+</div>
+</body>
+</html>

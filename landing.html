@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Smart Campus — Event Management</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+    <style>
+        :root {
+            --neon-pink:    #ff2d78;
+            --neon-pink-2:  #ff6bb5;
+            --neon-white:   #ffffff;
+            --neon-silver:  #c0c0c0;
+            --bg-dark:      #050508;
+            --bg-card:      rgba(255, 255, 255, 0.04);
+            --glow-pink:    0 0 20px rgba(255, 45, 120, 0.6), 0 0 60px rgba(255, 45, 120, 0.3);
+        }
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background: var(--bg-dark);
+            font-family: 'Rajdhani', sans-serif;
+            color: var(--neon-white);
+        }
+
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background-image:
+                linear-gradient(rgba(255, 45, 120, 0.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 45, 120, 0.06) 1px, transparent 1px);
+            background-size: 60px 60px;
+            animation: gridPulse 8s ease-in-out infinite;
+            pointer-events: none; z-index: 0;
+        }
+
+        @keyframes gridPulse {
+            0%, 100% { opacity: 0.5; }
+            50%       { opacity: 1; }
+        }
+
+        body::after {
+            content: '';
+            position: fixed; inset: 0;
+            background: radial-gradient(ellipse 80% 60% at 50% 50%, rgba(255, 45, 120, 0.08) 0%, transparent 70%);
+            pointer-events: none; z-index: 0;
+        }
+
+        .landing-container {
+            position: relative; z-index: 10;
+            width: 100vw; height: 100vh;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+        }
+
+        /* 3D Liquid-Metal Blob */
+        .blob-wrapper {
+            position: absolute;
+            width: 520px; height: 520px;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1; opacity: 0.18;
+        }
+
+        .blob {
+            width: 100%; height: 100%;
+            border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+            background: conic-gradient(
+                from 0deg,
+                #1a1a2e, #16213e, #0f3460, #533483,
+                #e94560, #ff2d78, #ff6bb5, #ffffff,
+                #c0c0c0, #808080, #ff2d78, #1a1a2e
+            );
+            animation: blobMorph 10s ease-in-out infinite, blobRotate 20s linear infinite;
+            filter: blur(2px) brightness(1.4) saturate(1.2);
+        }
+
+        @keyframes blobMorph {
+            0%   { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+            20%  { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
+            40%  { border-radius: 50% 30% 60% 40% / 40% 50% 60% 50%; }
+            60%  { border-radius: 40% 60% 40% 60% / 60% 40% 60% 40%; }
+            80%  { border-radius: 70% 30% 50% 50% / 30% 70% 50% 60%; }
+            100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+        }
+
+        @keyframes blobRotate {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+        }
+
+        .blob-inner {
+            position: absolute;
+            width: 70%; height: 70%;
+            top: 15%; left: 15%;
+            border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+            background: radial-gradient(ellipse at 30% 30%, rgba(255,255,255,0.8), rgba(192,192,192,0.5), rgba(255,45,120,0.3), transparent);
+            animation: blobMorph 7s ease-in-out infinite reverse, blobRotate 15s linear infinite reverse;
+            filter: blur(1px);
+        }
+
+        .content {
+            position: relative; z-index: 20;
+            display: flex; flex-direction: column;
+            align-items: center; gap: 16px;
+            text-align: center; padding: 0 24px;
+        }
+
+        .badge {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.75rem; letter-spacing: 4px;
+            text-transform: uppercase; color: var(--neon-pink);
+            border: 1px solid rgba(255, 45, 120, 0.4);
+            padding: 6px 20px; border-radius: 2px;
+            animation: fadeInDown 0.8s ease forwards;
+            background: rgba(255, 45, 120, 0.05);
+        }
+
+        .main-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(2.4rem, 6vw, 5.5rem);
+            font-weight: 900; line-height: 1.05;
+            letter-spacing: -1px;
+            animation: fadeInDown 0.9s ease 0.1s both;
+        }
+
+        .title-smart {
+            display: block; color: var(--neon-white);
+            text-shadow: 0 0 30px rgba(255,255,255,0.3);
+        }
+
+        .title-campus {
+            display: block;
+            background: linear-gradient(135deg, var(--neon-pink), var(--neon-pink-2), #fff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 20px rgba(255, 45, 120, 0.5));
+        }
+
+        .tagline {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: clamp(1rem, 2.5vw, 1.35rem);
+            font-weight: 300; color: rgba(255, 255, 255, 0.55);
+            letter-spacing: 2px; max-width: 560px;
+            line-height: 1.6;
+            animation: fadeInDown 1s ease 0.2s both;
+        }
+
+        .tagline span { color: var(--neon-pink-2); font-weight: 500; }
+
+        .divider {
+            width: 80px; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--neon-pink), transparent);
+            animation: fadeIn 1s ease 0.3s both;
+        }
+
+        .cta-btn {
+            display: inline-flex; align-items: center; gap: 12px;
+            margin-top: 8px; padding: 16px 48px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem; font-weight: 700;
+            letter-spacing: 3px; text-transform: uppercase;
+            text-decoration: none; color: var(--neon-white);
+            background: transparent; border: 1px solid var(--neon-pink);
+            position: relative; overflow: hidden; cursor: pointer;
+            animation: fadeInUp 1s ease 0.4s both;
+            transition: color 0.3s ease, box-shadow 0.3s ease;
+            clip-path: polygon(12px 0%, 100% 0%, calc(100% - 12px) 100%, 0% 100%);
+        }
+
+        .cta-btn::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(135deg, var(--neon-pink), var(--neon-pink-2));
+            transform: translateX(-105%);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: -1;
+        }
+
+        .cta-btn:hover::before { transform: translateX(0); }
+        .cta-btn:hover { box-shadow: var(--glow-pink); color: #fff; }
+
+        .cta-btn .arrow {
+            display: inline-block;
+            transition: transform 0.3s ease; font-size: 1.2rem;
+        }
+        .cta-btn:hover .arrow { transform: translateX(6px); }
+
+        .stats-row {
+            position: absolute; bottom: 48px;
+            display: flex; gap: 60px;
+            animation: fadeInUp 1s ease 0.6s both;
+        }
+
+        .stat-item { text-align: center; }
+
+        .stat-number {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem; font-weight: 700;
+            color: var(--neon-pink); display: block;
+        }
+
+        .stat-label {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.65rem; letter-spacing: 2px;
+            color: rgba(255,255,255,0.35); text-transform: uppercase;
+        }
+
+        .stat-sep {
+            width: 1px;
+            background: linear-gradient(to bottom, transparent, rgba(255,45,120,0.3), transparent);
+            align-self: stretch;
+        }
+
+        .corner { position: fixed; width: 40px; height: 40px; z-index: 5; }
+        .corner::before, .corner::after { content: ''; position: absolute; background: var(--neon-pink); }
+        .corner::before { width: 100%; height: 1px; }
+        .corner::after  { width: 1px; height: 100%; }
+        .corner-tl { top: 24px; left: 24px; }
+        .corner-tr { top: 24px; right: 24px; transform: scaleX(-1); }
+        .corner-bl { bottom: 24px; left: 24px; transform: scaleY(-1); }
+        .corner-br { bottom: 24px; right: 24px; transform: scale(-1); }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .particles { position: fixed; inset: 0; pointer-events: none; z-index: 2; overflow: hidden; }
+
+        .particle {
+            position: absolute; width: 2px; height: 2px;
+            background: var(--neon-pink); border-radius: 50%;
+            opacity: 0; animation: float linear infinite;
+        }
+
+        @keyframes float {
+            0%   { transform: translateY(100vh) translateX(0); opacity: 0; }
+            10%  { opacity: 0.6; }
+            90%  { opacity: 0.3; }
+            100% { transform: translateY(-10vh) translateX(40px); opacity: 0; }
+        }
+
+        .particle:nth-child(1)  { left:5%;  animation-duration:8s;  animation-delay:0s;   width:3px; height:3px; }
+        .particle:nth-child(2)  { left:15%; animation-duration:11s; animation-delay:1s; }
+        .particle:nth-child(3)  { left:25%; animation-duration:7s;  animation-delay:2s;   width:3px; height:3px; background:#ff6bb5; }
+        .particle:nth-child(4)  { left:35%; animation-duration:9s;  animation-delay:0.5s; }
+        .particle:nth-child(5)  { left:45%; animation-duration:12s; animation-delay:3s;   width:4px; height:4px; }
+        .particle:nth-child(6)  { left:55%; animation-duration:6s;  animation-delay:1.5s; background:#fff; }
+        .particle:nth-child(7)  { left:65%; animation-duration:10s; animation-delay:2.5s; }
+        .particle:nth-child(8)  { left:75%; animation-duration:8s;  animation-delay:0.8s; width:3px; height:3px; }
+        .particle:nth-child(9)  { left:85%; animation-duration:13s; animation-delay:4s;   background:#ff6bb5; }
+        .particle:nth-child(10) { left:92%; animation-duration:9s;  animation-delay:1.2s; }
+        .particle:nth-child(11) { left:10%; animation-duration:14s; animation-delay:5s;   width:4px; height:4px; }
+        .particle:nth-child(12) { left:70%; animation-duration:7s;  animation-delay:3.5s; background:#fff; }
+    </style>
+</head>
+<body>
+    <div class="particles" aria-hidden="true">
+        <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+        <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+        <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+        <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+    </div>
+
+    <div class="corner corner-tl" aria-hidden="true"></div>
+    <div class="corner corner-tr" aria-hidden="true"></div>
+    <div class="corner corner-bl" aria-hidden="true"></div>
+    <div class="corner corner-br" aria-hidden="true"></div>
+
+    <div class="blob-wrapper" aria-hidden="true">
+        <div class="blob"><div class="blob-inner"></div></div>
+    </div>
+
+    <div class="landing-container">
+        <div class="content">
+            <div class="badge">// Campus Intelligence System v2.0</div>
+            <h1 class="main-title">
+                <span class="title-smart">SMART</span>
+                <span class="title-campus">CAMPUS</span>
+            </h1>
+            <p class="tagline">
+                The <span>next-generation</span> platform for
+                discovering, managing, and experiencing campus events.
+            </p>
+            <div class="divider"></div>
+            <a th:href="@{/login}" class="cta-btn">
+                Let's Get Started <span class="arrow">→</span>
+            </a>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-item">
+                <span class="stat-number">8+</span>
+                <span class="stat-label">Live Events</span>
+            </div>
+            <div class="stat-sep"></div>
+            <div class="stat-item">
+                <span class="stat-number">500+</span>
+                <span class="stat-label">Registrations</span>
+            </div>
+            <div class="stat-sep"></div>
+            <div class="stat-item">
+                <span class="stat-number">6+</span>
+                <span class="stat-label">Departments</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
