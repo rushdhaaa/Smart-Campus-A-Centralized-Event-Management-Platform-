@@ -21,6 +21,7 @@
 ![H2](https://img.shields.io/badge/H2-Database-004088?style=for-the-badge&logo=h2&logoColor=white)
 ![Thymeleaf](https://img.shields.io/badge/Thymeleaf-3.x-005F0F?style=for-the-badge&logo=thymeleaf&logoColor=white)
 ![Spring Security](https://img.shields.io/badge/Spring%20Security-Basic%20Auth-6DB33F?style=for-the-badge&logo=springsecurity&logoColor=white)
+![Gemini AI](https://img.shields.io/badge/Google%20Gemini-AI%20Powered-4285F4?style=for-the-badge&logo=google&logoColor=white)
 
 <br/>
 
@@ -33,7 +34,7 @@
 
 | 📄 Pages | ☕ Java Files | 🔗 REST Endpoints | 🎪 Sample Events |
 |:---:|:---:|:---:|:---:|
-| **3** | **19** | **12** | **8** |
+| **3** | **19** | **14** | **8** |
 
 </div>
 
@@ -50,6 +51,7 @@
 - [Page Structure & UI](#-page-structure--ui)
 - [Database Schema](#-database-schema)
 - [REST API Reference](#-rest-api-reference)
+- [AI Recommendation System](#-ai-recommendation-system)
 - [Setup & Installation](#-setup--installation)
 - [How to Run](#-how-to-run)
 - [Access Credentials](#-access-credentials)
@@ -69,6 +71,7 @@ Campus event management in most colleges is chaotic and fragmented. Events are a
 | 📝 **Manual Registrations** | Paper-based or spreadsheet-driven registration has no capacity enforcement, duplicate detection, or real-time availability. |
 | 📊 **Zero Admin Visibility** | Admins cannot filter events by department, date, or type. No dashboards showing registration counts or statistics. |
 | 🔇 **No Feedback Loop** | After events, there is no structured way to collect student ratings, making it impossible to improve future events. |
+| 🤖 **No Personalization** | Students must manually browse all events with no intelligent filtering based on their interests. |
 
 ---
 
@@ -77,7 +80,7 @@ Campus event management in most colleges is chaotic and fragmented. Events are a
 **Smart Campus Event Management System** is a full-stack web application built with Spring Boot 3 that provides a unified platform for the entire campus event lifecycle — from discovery to feedback.
 
 ```
-Student Journey:   Landing → Login → Browse Events → Register → View My Events → Submit Feedback
+Student Journey:   Landing → Login → Browse Events → AI Recommendations → Register → View My Events → Submit Feedback
 Admin Journey:     Landing → Login → Admin Panel → Add/Edit/Delete Events → View Stats & Filters
 ```
 
@@ -87,6 +90,7 @@ Admin Journey:     Landing → Login → Admin Panel → Add/Edit/Delete Events 
 | 🔒 **Smart Registration Engine** | Server-side rules prevent duplicates, enforce capacity limits, and reject registrations for invalid event states |
 | ⚙️ **Admin Control Panel** | Secured with HTTP Basic Auth — full CRUD, multi-field filtering, date range search, and live statistics |
 | ⭐ **Structured Feedback** | 5-star ratings + written comments per event; admins can retrieve average ratings via REST API |
+| 🤖 **AI Recommendations** | Google Gemini AI scores every event against student interests and returns a ranked list with match reasons |
 
 ---
 
@@ -100,6 +104,7 @@ Admin Journey:     Landing → Login → Admin Panel → Add/Edit/Delete Events 
 - ✅ View all personal registrations by email lookup
 - ✅ Submit star ratings (1–5) and written feedback for any event
 - ✅ Toast notifications for all actions (success/error)
+- ✅ **AI-powered event recommendations based on personal interests**
 
 ### ⚙️ Admin Features
 - ✅ View live dashboard statistics (total events, upcoming, completed, total registrations, active departments)
@@ -109,6 +114,13 @@ Admin Journey:     Landing → Login → Admin Panel → Add/Edit/Delete Events 
 - ✅ Search/filter events by: department, type, status, from-date, to-date
 - ✅ View all events including completed and cancelled ones
 - ✅ Secured with Spring Security HTTP Basic Authentication
+
+### 🤖 AI Recommendation Features
+- ✅ Enter any interest string (e.g. "AI, coding, robotics") to get personalized event suggestions
+- ✅ Each recommendation includes a **match score (0–100)** and a **one-line AI reason**
+- ✅ Results are ranked by relevance and labelled HIGH / MEDIUM / LOW match
+- ✅ Powered by **Google Gemini 2.5 Flash** via a single optimized API call
+- ✅ Graceful fallback — if the AI call fails, a friendly message is shown without crashing
 
 ### 🎨 UI/UX Features
 - ✅ Futuristic neon pink + dark theme
@@ -132,6 +144,9 @@ Admin Journey:     Landing → Login → Admin Panel → Add/Edit/Delete Events 
 | **Spring Security** | Included | HTTP Basic Authentication for `/admin/**` routes |
 | **Jakarta Validation** | Included | `@NotBlank`, `@Size`, `@Email`, `@Pattern`, `@Min`, `@Max` |
 | **H2 Database** | Runtime | In-memory embedded database, zero installation required |
+| **Google Gemini AI** | v1beta | AI-powered event recommendations via `generateContent` REST API |
+| **RestTemplate** | Included | HTTP client used to call the Gemini API |
+| **Jackson** | Included | JSON serialization/deserialization of Gemini request and response |
 
 ### Frontend
 | Technology | Purpose |
@@ -139,7 +154,7 @@ Admin Journey:     Landing → Login → Admin Panel → Add/Edit/Delete Events 
 | **Thymeleaf** | Server-side HTML templating with `th:each`, `th:if`, `th:field`, `th:errors`, `#temporals` |
 | **HTML5 + CSS3** | Pure CSS animations: 3D blob, neon glow, particle system, hover transitions |
 | **Google Fonts** | Orbitron (display), Rajdhani (body), Share Tech Mono (monospaced labels) |
-| **Vanilla JavaScript** | Fetch API for REST calls, modal management, client-side filtering |
+| **Vanilla JavaScript** | Fetch API for REST calls, modal management, client-side filtering, AI recommendation UI |
 
 ### Build & Tools
 | Tool | Version | Purpose |
@@ -164,12 +179,14 @@ The application follows a strict **4-layer architecture** where each layer only 
 ┌────────────────────────────▼────────────────────────────────────┐
 │                    CONTROLLER LAYER                             │
 │  PageController(@Controller) │ EventController(@RestController) │
-│  RegistrationController(@RestController) │ GlobalExceptionHandler│
+│  RegistrationController(@RestController)                        │
+│  RecommendationController(@RestController) │ GlobalExceptionHandler│
 └────────────────────────────┬────────────────────────────────────┘
                              │  Method calls
 ┌────────────────────────────▼────────────────────────────────────┐
 │                     SERVICE LAYER                               │
 │     EventService │ RegistrationService │ FeedbackService        │
+│     RecommendationService (→ Gemini API) │ CalendarService      │
 │         Business Logic + Validation Rules + @Transactional      │
 └────────────────────────────┬────────────────────────────────────┘
                              │  Repository calls
@@ -184,6 +201,13 @@ The application follows a strict **4-layer architecture** where each layer only 
 │           H2 In-Memory │ EVENTS │ REGISTRATIONS │ FEEDBACKS     │
 │                    DDL auto: create-drop                         │
 └─────────────────────────────────────────────────────────────────┘
+                             │
+                 ┌───────────▼────────────┐
+                 │   EXTERNAL AI LAYER    │
+                 │  Google Gemini API     │
+                 │  v1beta · gemini-2.5-flash│
+                 │  generateContent REST  │
+                 └────────────────────────┘
 ```
 
 ### Spring MVC Request Flow
@@ -204,6 +228,8 @@ DispatcherServlet (Spring MVC Front Controller)
       │
       ├─── EventController ─── GET /api/events ────────► JSON List
       │                    ─── POST /api/admin/events ──► JSON Event
+      │
+      ├─── RecommendationController ─ GET /api/recommendations ► JSON (via Gemini)
       │
       └─── RegistrationController ─ POST /api/events/{id}/register ► JSON
 ```
@@ -228,11 +254,13 @@ SmartCampusFix/
     │   │   ├── controller/
     │   │   │   ├── PageController.java               ← Serves HTML pages (@Controller)
     │   │   │   ├── EventController.java              ← Event CRUD REST API (@RestController)
-    │   │   │   └── RegistrationController.java       ← Registration + Feedback REST API
+    │   │   │   ├── RegistrationController.java       ← Registration + Feedback REST API
+    │   │   │   └── RecommendationController.java     ← AI recommendations + calendar endpoints
     │   │   │
     │   │   ├── dto/
     │   │   │   ├── StudentDTO.java                   ← Login form data (name, email, phone)
-    │   │   │   └── FeedbackDTO.java                  ← Feedback submission data
+    │   │   │   ├── FeedbackDTO.java                  ← Feedback submission data
+    │   │   │   └── RecommendationResult.java         ← DTO: event + matchLevel + score + reason
     │   │   │
     │   │   ├── exception/
     │   │   │   ├── GlobalExceptionHandler.java       ← @ControllerAdvice — all error handling
@@ -252,15 +280,17 @@ SmartCampusFix/
     │   │   └── service/
     │   │       ├── EventService.java                 ← CRUD, statistics, search logic
     │   │       ├── RegistrationService.java          ← Registration rules, cancel logic
-    │   │       └── FeedbackService.java              ← Submit + retrieve feedback
+    │   │       ├── FeedbackService.java              ← Submit + retrieve feedback
+    │   │       ├── RecommendationService.java        ← Gemini API call + score parsing
+    │   │       └── CalendarService.java              ← ICS generation + conflict detection
     │   │
     │   └── resources/
-    │       ├── application.properties                ← DB, security, Thymeleaf configuration
+    │       ├── application.properties                ← DB, security, Thymeleaf, Gemini config
     │       ├── data.sql                              ← 8 sample events (auto-loaded on start)
     │       └── templates/
     │           ├── landing.html                      ← Page 1: 3D blob, particles, CTA button
     │           ├── login.html                        ← Page 2: form + Spring Validation errors
-    │           ├── dashboard.html                    ← Page 3 (Student): grid, register, feedback
+    │           ├── dashboard.html                    ← Page 3 (Student): grid, register, feedback, AI
     │           ├── admin.html                        ← Page 3 (Admin): CRUD, stats, filter table
     │           └── error.html                        ← Custom error page (404, 500 etc.)
     │
@@ -415,6 +445,62 @@ Content-Type: application/json
 }
 ```
 
+#### AI Recommendations
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/recommendations?interest={interest}` | Get AI-ranked events for a student's interests |
+
+**Example Request:**
+```
+GET /api/recommendations?interest=AI%2C+machine+learning%2C+robotics
+```
+
+**Example Response:**
+```json
+[
+  {
+    "eventId": 1,
+    "title": "Tech Summit 2025",
+    "eventType": "CONFERENCE",
+    "eventDate": "2026-08-15",
+    "venue": "Auditorium A",
+    "department": "Computer Science",
+    "capacity": 200,
+    "registeredCount": 45,
+    "matchLevel": "HIGH",
+    "matchScore": 95,
+    "matchReason": "The conference directly features AI workshops and discussions."
+  },
+  {
+    "eventId": 4,
+    "title": "Data Science Workshop",
+    "eventType": "WORKSHOP",
+    "eventDate": "2026-09-10",
+    "venue": "Lab 3",
+    "department": "Computer Science",
+    "capacity": 60,
+    "registeredCount": 58,
+    "matchLevel": "HIGH",
+    "matchScore": 90,
+    "matchReason": "The workshop covers Machine Learning fundamentals directly aligned with interests."
+  }
+]
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `matchLevel` | String | `HIGH` (score ≥ 65) · `MEDIUM` (score ≥ 35) · `LOW` (score < 35) |
+| `matchScore` | Integer | 0–100 relevance score assigned by Gemini AI |
+| `matchReason` | String | One-sentence explanation from the AI |
+
+#### Calendar
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/calendar/export/{eventId}?name=&email=` | Download a `.ics` calendar file for an event |
+| `GET` | `/api/calendar/conflict/{eventId}?email=` | Check if registering would cause a time conflict |
+
 ---
 
 ### 🔐 Admin Endpoints (HTTP Basic Auth Required)
@@ -485,6 +571,73 @@ GET /api/admin/stats
 
 ---
 
+## 🤖 AI Recommendation System
+
+### How It Works
+
+The recommendation engine uses **Google Gemini 2.5 Flash** to intelligently score every event in the database against a student's free-text interest string.
+
+```
+Student types interest  →  RecommendationController
+        │
+        ▼
+RecommendationService.getRecommendedEvents(interest)
+        │
+        ├── Fetch all events from EventRepository
+        │
+        ├── Build a single prompt with all event titles, types & descriptions
+        │
+        ▼
+Google Gemini API (v1beta · gemini-2.5-flash)
+  POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
+        │
+        ▼
+  Returns JSON array:  [{ id, score, reason }, ...]
+        │
+        ├── Parse scores → map to Event entities
+        ├── Assign MatchLevel: HIGH / MEDIUM / LOW
+        ├── Sort by score DESC
+        └── Return ranked RecommendationResult list
+                │
+                ▼
+        RecommendationController
+        → JSON response to dashboard.html
+        → Rendered as neon recommendation cards
+```
+
+### Single API Call Design
+
+All events are sent in **one prompt** to Gemini, making it cost-efficient regardless of how many events exist. Gemini scores all events in one shot and returns a ranked JSON array.
+
+### Configuration
+
+Set the following in `application.properties`:
+
+```properties
+# ── Google Gemini Configuration ───────────────────────
+# Get your free key from: https://aistudio.google.com/app/apikey
+gemini.api.key=YOUR_API_KEY_HERE
+gemini.api.model=gemini-2.5-flash
+```
+
+> ⚠️ **Important:** Use model `gemini-2.5-flash` with API version `v1beta`. Other combinations (`gemini-2.0-flash` on `v1`, `gemini-1.5-flash-8b` on `v1`) result in 404 errors. The free tier quota for `gemini-2.5-flash` on `v1beta` is generous — up to 1 million tokens/day.
+
+### Match Level Thresholds
+
+| Score Range | Match Level | Meaning |
+|---|---|---|
+| 65 – 100 | 🟢 HIGH | Strongly aligned with student interests |
+| 35 – 64 | 🟡 MEDIUM | Partially relevant |
+| 0 – 34 | 🔴 LOW | Little to no relevance |
+
+Events with a score of 0 are excluded from results entirely.
+
+### Fallback Behavior
+
+If the Gemini API call fails for any reason (network error, quota exceeded, invalid key), the service returns an empty list gracefully and the UI shows "Recommendations not available. Please try again later." — the rest of the application continues working normally.
+
+---
+
 ## ⚙️ Setup & Installation
 
 ### Prerequisites
@@ -509,7 +662,14 @@ git clone https://github.com/yourusername/smart-campus-events.git
 cd smart-campus-events
 ```
 
-### Step 2 — Verify Project Structure
+### Step 2 — Add Your Gemini API Key
+
+1. Go to [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
+2. Click **"Create API Key"** and copy the key
+3. Open `src/main/resources/application.properties`
+4. Replace `YOUR_API_KEY_HERE` on the `gemini.api.key` line with your actual key
+
+### Step 3 — Verify Project Structure
 
 Make sure your extracted folder contains:
 ```
@@ -581,6 +741,7 @@ java -jar target/smart-campus-events-1.0.0.jar
 | `http://localhost:8080/dashboard` | Student dashboard |
 | `http://localhost:8080/admin/dashboard` | Admin panel (prompts for login) |
 | `http://localhost:8080/h2-console` | H2 database browser |
+| `http://localhost:8080/api/recommendations?interest=AI` | AI recommendations (direct API test) |
 
 **H2 Console Settings:**
 ```
@@ -652,6 +813,16 @@ public EventService(EventRepository eventRepository) {
     this.eventRepository = eventRepository;
 }
 ```
+
+---
+
+### 🤖 Gemini API — Key Notes
+
+- **Model:** Always use `gemini-2.5-flash` — it is the only model confirmed working on the free tier with `v1beta`
+- **API Version:** Always use `v1beta` in the URL — `v1` returns 404 for this model
+- **Free Quota:** ~1 million tokens/day, 15 requests/minute — sufficient for normal use
+- **Key Security:** Never commit your API key to Git. Add `application.properties` to `.gitignore` or use environment variables in production
+- **Rate Limits:** If you hit 429 errors, wait 60 seconds and try again, or generate a new key from AI Studio
 
 ---
 
@@ -747,6 +918,23 @@ And add MySQL dependency to `pom.xml`:
 │ ▓▓▓░░ 45/200 │ ▓▓▓░░ 32/100 │ ▓▓▓░ 210/500 │ ▓▓▓▓▓ 58/60  │
 │ [Register→]  │ [Register→]  │ [Register→]  │ [Event Full]   │
 └──────────────┴──────────────┴──────────────┴────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│  🤖 AI RECOMMENDATIONS                                       │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │ Your interests: [ AI, machine learning          ]    │   │
+│  │                          [ GET RECOMMENDATIONS → ]   │   │
+│  └──────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌─────────────────────┐  ┌─────────────────────┐          │
+│  │ 🟢 HIGH  Score: 95  │  │ 🟢 HIGH  Score: 90  │          │
+│  │ Tech Summit 2025    │  │ Data Science Workshop│          │
+│  │ CONFERENCE          │  │ WORKSHOP             │          │
+│  │ "Directly covers AI │  │ "Covers ML topics    │          │
+│  │  workshops."        │  │  aligned with you."  │          │
+│  │ [Register →]        │  │ [Register →]         │          │
+│  └─────────────────────┘  └─────────────────────┘          │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -808,6 +996,22 @@ Both must be set correctly for `data.sql` to run on startup.
 
 ---
 
+### ❌ AI Recommendations show "Recommendations not available"
+```
+Gemini call failed — returning empty recommendations.
+```
+Check the Spring Boot console for the exact reason. Common causes and fixes:
+
+| Error | Fix |
+|---|---|
+| `404 NOT_FOUND` — wrong model name | Use `gemini.api.model=gemini-2.5-flash` in `application.properties` |
+| `429 RESOURCE_EXHAUSTED` — quota exceeded | Generate a new API key at [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey) |
+| `400 BAD_REQUEST` — malformed request | Ensure `v1beta` is in the URL (not `v1`) |
+| Empty `gemini.api.key` | Paste your actual key in `application.properties` |
+| JSON parse error / truncated response | Already fixed — `maxOutputTokens` is set to `8192` |
+
+---
+
 ## 📦 Build Information
 
 ```
@@ -829,7 +1033,7 @@ This project is licensed under the **MIT License** — free to use, modify, and 
 
 <div align="center">
 
-**Built with ❤️ using Spring Boot · Thymeleaf · H2 · Spring Security**
+**Built with ❤️ using Spring Boot · Thymeleaf · H2 · Spring Security · Google Gemini AI**
 
 *Smart Campus Event Management System — Version 1.0.0*
 
